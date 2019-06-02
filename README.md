@@ -6,6 +6,6 @@ This package is provided for a quick-start experience in neoan3
 
 After initializing a neoan3 app ( [instructions](https://github.com/sroehrl/neoan3) ), use the neoan3-cli:
 
-`neoan3 add model user https://github.com/sroehrl/neoan3-userModel.git`
+`neoan3 add model neoan3-model/user https://github.com/sroehrl/neoan3-userModel.git`
 
 Then, run `neoan3 migrate models up` to add required fields/tables to your database.
