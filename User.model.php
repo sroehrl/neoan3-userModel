@@ -51,7 +51,7 @@ class UserModel extends IndexModel {
         $id = '$'.Db::uuid()->uuid;
         Db::ask('user',['id'=>$id]);
         Db::ask('user_email',['user_id'=>$id,'email'=>$email,'confirm_code'=>Ops::hash(28)]);
-        Db::ask('user_password',['id'=>$id,'password'=>Ops::encrypt($password,$password)]);
+        Db::ask('user_password',['user_id'=>$id,'password'=>Ops::encrypt($password,$password)]);
         return self::byId($id);
     }
 
