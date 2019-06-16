@@ -8,22 +8,32 @@ use Neoan3\Apps\Db;
 use Neoan3\Apps\DbException;
 use Neoan3\Apps\Ops;
 
+/**
+ * Class UserModel
+ * @package Neoan3\Model
+ */
 class UserModel extends IndexModel {
+    /**
+     * @param $id
+     *
+     * @return array
+     */
     static function byId($id) {
-        try{
+        try {
             $user = Db::easy('user.*', ['id' => '$' . $id]);
-        } catch (DbException $e){
+        } catch (DbException $e) {
             return [];
         }
 
-        if(!empty($user)){
+        if (!empty($user)) {
             $user = $user[0];
-            $tables = ['email'=>false, 'profile'=>false, 'role'=>true];
+            $user['email'] = parent::first(Db::easy('user_email.email user_email.confirm_date user_email.id user_email.delete_date', ['^delete_date', 'user_id' => '$' . $id]));
+            $tables = ['profile' => false, 'role' => true];
             foreach ($tables as $table => $multiple) {
                 $q = Db::easy('user_' . $table . '.*', ['^delete_date', 'user_id' => '$' . $id]);
-                if($multiple){
-                    $user[$table.'s'] = $q;
-                } else{
+                if ($multiple) {
+                    $user[$table . 's'] = $q;
+                } else {
                     $user[$table] = isset($q[0]) ? $q[0] : $q;
                 }
 
@@ -32,13 +42,18 @@ class UserModel extends IndexModel {
         return $user;
     }
 
+    /**
+     * @param array $condition
+     *
+     * @return array
+     */
     static function find($condition = []) {
         if (!isset($condition['user.delete_date'])) {
             $condition['user.delete_date'] = '';
         }
-        try{
+        try {
             $ids = Db::easy('user.id user_email.email', $condition);
-        } catch (DbException $e){
+        } catch (DbException $e) {
             $ids = [];
         }
         $users = [];
@@ -47,11 +62,22 @@ class UserModel extends IndexModel {
         }
         return $users;
     }
-    static function register($email,$password){
-        $id = '$'.Db::uuid()->uuid;
-        Db::ask('user',['id'=>$id,'user_type'=>'user']);
-        Db::ask('user_email',['user_id'=>$id,'email'=>$email,'confirm_code'=>Ops::hash(28)]);
-        Db::ask('user_password',['id'=>$id,'password'=>Ops::encrypt($password,$password)]);
+
+    /**
+     * Register using encrypted or hashed password
+     *
+     * @param      $email
+     * @param      $password
+     * @param bool $hashed
+     *
+     * @return array
+     */
+    static function register($email, $password, $hashed = false) {
+        $id = '$' . Db::uuid()->uuid;
+        $insertPassword = $hashed ? '=' . password_hash($password, PASSWORD_DEFAULT) : Ops::encrypt($password, $password);
+        Db::ask('user', ['id' => $id, 'user_type' => 'user']);
+        Db::ask('user_email', ['user_id' => $id, 'email' => $email, 'confirm_code' => Ops::hash(28)]);
+        Db::ask('user_password', ['id' => $id, 'password' => $insertPassword]);
         return self::byId($id);
     }
 
