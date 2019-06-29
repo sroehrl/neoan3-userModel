@@ -17,6 +17,7 @@ class UserModel extends IndexModel {
      * @param $id
      *
      * @return array
+     * @throws DbException
      */
     static function byId($id) {
         try {
@@ -28,6 +29,9 @@ class UserModel extends IndexModel {
         if (!empty($user)) {
             $user = $user[0];
             $user['email'] = parent::first(Db::easy('user_email.email user_email.confirm_date user_email.id user_email.delete_date', ['^delete_date', 'user_id' => '$' . $id]));
+            if($user['image_id']){
+                $user['image'] = ImageModel::undeletedById($user['image_id']);
+            }
             $tables = ['profile' => false, 'role' => true];
             foreach ($tables as $table => $multiple) {
                 $q = Db::easy('user_' . $table . '.*', ['^delete_date', 'user_id' => '$' . $id]);
@@ -46,6 +50,7 @@ class UserModel extends IndexModel {
      * @param array $condition
      *
      * @return array
+     * @throws DbException
      */
     static function find($condition = []) {
         if (!isset($condition['user.delete_date'])) {
@@ -71,6 +76,7 @@ class UserModel extends IndexModel {
      * @param bool $hashed
      *
      * @return array
+     * @throws DbException
      */
     static function register($email, $password, $hashed = false) {
         $id = '$' . Db::uuid()->uuid;

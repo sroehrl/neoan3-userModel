@@ -5,13 +5,14 @@
     "require": {
         "mnsami/composer-custom-directory-installer": "1.1.*",
         "neoan3-apps/db": "dev-master",
-        "neoan3-apps/ops": "dev-master"
+        "neoan3-apps/ops": "dev-master",
+        "blua-blue/image-model": "dev-master"
     },
     "license": "MIT",
     "extra": {
         "installer-paths": {
             "./frame/{$name}": [],
-            "./model/{$name}": [],
+            "./model/{$name}": ["blua-blue/image-model"],
             "./component/{$name}": []
         }
     }

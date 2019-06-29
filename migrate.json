@@ -28,10 +28,17 @@
       "default": false,
       "a_i": false
     },
+    "image_id": {
+      "type": "binary(16)",
+      "key": false,
+      "nullable": true,
+      "default": false,
+      "a_i": false
+    },
     "insert_date": {
       "type": "timestamp",
       "key": false,
-      "nullable": true,
+      "nullable": false,
       "default": "CURRENT_TIMESTAMP",
       "a_i": false
     },
@@ -75,7 +82,7 @@
     "insert_date": {
       "type": "timestamp",
       "key": false,
-      "nullable": true,
+      "nullable": false,
       "default": "CURRENT_TIMESTAMP",
       "a_i": false
     },
