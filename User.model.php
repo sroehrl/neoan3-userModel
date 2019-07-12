@@ -29,7 +29,7 @@ class UserModel extends IndexModel {
         if (!empty($user)) {
             $user = $user[0];
             $user['email'] = parent::first(Db::easy('user_email.email user_email.confirm_date user_email.id user_email.delete_date', ['^delete_date', 'user_id' => '$' . $id]));
-            if($user['image_id']){
+            if ($user['image_id']) {
                 $user['image'] = ImageModel::undeletedById($user['image_id']);
             }
             $tables = ['profile' => false, 'role' => true];
@@ -79,12 +79,13 @@ class UserModel extends IndexModel {
      * @throws DbException
      */
     static function register($email, $password, $hashed = false) {
-        $id = '$' . Db::uuid()->uuid;
+        $id = Db::uuid()->uuid;
+        $confirm_code = Ops::hash(28);
         $insertPassword = $hashed ? '=' . password_hash($password, PASSWORD_DEFAULT) : Ops::encrypt($password, $password);
-        Db::ask('user', ['id' => $id, 'user_type' => 'user']);
-        Db::ask('user_email', ['user_id' => $id, 'email' => $email, 'confirm_code' => Ops::hash(28)]);
-        Db::ask('user_password', ['id' => $id, 'password' => $insertPassword]);
-        return self::byId($id);
+        Db::ask('user', ['id' => '$' . $id, 'user_type' => 'user']);
+        Db::ask('user_email', ['user_id' => '$' . $id, 'email' => $email, 'confirm_code' => $confirm_code]);
+        Db::ask('user_password', ['user_id' => '$' . $id, 'password' => $insertPassword]);
+        return ['model' => self::byId($id), 'confirm_code' => $confirm_code];
     }
 
 }
