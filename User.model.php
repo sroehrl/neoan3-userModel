@@ -90,7 +90,7 @@ class UserModel extends IndexModel
             $password);
         Db::ask('user', ['id' => '$' . $id, 'user_type' => 'user']);
         Db::ask('user_email', ['user_id' => '$' . $id, 'email' => $email, 'confirm_code' => $confirm_code]);
-        Db::ask('user_password', ['user_id' => '$' . $id, 'password' => $insertPassword, 'confirm_code' => $confirm_code]);
+        Db::ask('user_password', ['user_id' => '$' . $id, 'password' => $insertPassword, 'confirm_code' => $confirm_code, 'confirm_date' => '.']);
         return ['model' => self::byId($id), 'confirm_code' => $confirm_code];
     }
 
