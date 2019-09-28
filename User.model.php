@@ -3,95 +3,54 @@
 
 namespace Neoan3\Model;
 
-
 use Neoan3\Apps\Db;
 use Neoan3\Apps\DbException;
-use Neoan3\Apps\Ops;
+use Neoan3\Apps\Transformer;
+use Neoan3\Core\RouteException;
 
 /**
  * Class UserModel
  * @package Neoan3\Model
+ * @method static create($array)
+ * @method static find($array)
+ * @method static findEmail($array)
+ * @method static get($id)
+ * @method static update($array)
  */
 class UserModel extends IndexModel
 {
-    /**
-     * @param $id
-     *
-     * @return array
-     * @throws DbException
-     */
-    static function byId($id)
+    static function __callStatic($name, $arguments)
     {
-        try {
-            $user = Db::easy('user.*', ['id' => '$' . $id]);
-        } catch (DbException $e) {
-            return [];
+        return Transformer::addMagic($name,$arguments);
+    }
+
+    /**
+     * @param $credentials
+     * @return array|mixed
+     * @throws DbException
+     * @throws RouteException
+     */
+    static function login($credentials)
+    {
+        if(isset($credentials['email'])){
+            $user = IndexModel::first(self::findEmails(['email'=>$credentials['email']]));
+        } else {
+            $user = IndexModel::first(self::find(['userName' => $credentials['userName']]));
+        }
+        if(empty($user)){
+            throw new RouteException('Unauthorized',401);
+        }
+        // authenticate
+        $password = Db::easy('user_password.password',['user_id'=>'$'.$user['id'], '^delete_date']);
+        if(empty($password)){
+            throw new RouteException('No valid login',422);
         }
 
-        if (!empty($user)) {
-            $user = $user[0];
-            $user['email'] = parent::first(Db::easy('user_email.email user_email.confirm_date user_email.id user_email.delete_date',
-                ['^delete_date', 'user_id' => '$' . $id]));
-            if ($user['image_id']) {
-                $user['image'] = ImageModel::undeletedById($user['image_id']);
-            }
-            $tables = ['profile' => false, 'role' => true];
-            foreach ($tables as $table => $multiple) {
-                $q = Db::easy('user_' . $table . '.*', ['^delete_date', 'user_id' => '$' . $id]);
-                if ($multiple) {
-                    $user[$table . 's'] = $q;
-                } else {
-                    $user[$table] = isset($q[0]) ? $q[0] : $q;
-                }
-
-            }
+        $verify = password_verify($credentials['password'], $password[0]['password']);
+        if(!$verify){
+            throw new RouteException('Unauthorized', 401);
         }
         return $user;
-    }
-
-    /**
-     * @param array $condition
-     *
-     * @return array
-     * @throws DbException
-     */
-    static function find($condition = [])
-    {
-        if (!isset($condition['user.delete_date'])) {
-            $condition['user.delete_date'] = '';
-        }
-        try {
-            $ids = Db::easy('user.id user_email.email', $condition);
-        } catch (DbException $e) {
-            $ids = [];
-        }
-        $users = [];
-        foreach ($ids as $id) {
-            $users[] = self::byId($id['id']);
-        }
-        return $users;
-    }
-
-    /**
-     * Register using encrypted or hashed password
-     *
-     * @param      $email
-     * @param      $password
-     * @param bool $hashed
-     *
-     * @return array
-     * @throws DbException
-     */
-    static function register($email, $password, $hashed = false)
-    {
-        $id = Db::uuid()->uuid;
-        $confirm_code = Ops::hash(28);
-        $insertPassword = $hashed ? '=' . password_hash($password, PASSWORD_DEFAULT) : Ops::encrypt($password,
-            $password);
-        Db::ask('user', ['id' => '$' . $id, 'user_type' => 'user']);
-        Db::ask('user_email', ['user_id' => '$' . $id, 'email' => $email, 'confirm_code' => $confirm_code]);
-        Db::ask('user_password', ['user_id' => '$' . $id, 'password' => $insertPassword, 'confirm_code' => $confirm_code, 'confirm_date' => '.']);
-        return ['model' => self::byId($id), 'confirm_code' => $confirm_code];
     }
 
 }
