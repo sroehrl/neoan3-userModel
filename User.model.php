@@ -3,13 +3,17 @@
 
 namespace Neoan3\Model;
 
+use Neoan3\Apps\Db;
+use Neoan3\Apps\DbException;
 use Neoan3\Apps\Transformer;
+use Neoan3\Core\RouteException;
 
 /**
  * Class UserModel
  * @package Neoan3\Model
  * @method static create($array)
  * @method static find($array)
+ * @method static findEmail($array)
  * @method static get($id)
  * @method static update($array)
  */
@@ -18,6 +22,35 @@ class UserModel extends IndexModel
     static function __callStatic($name, $arguments)
     {
         return Transformer::addMagic($name,$arguments);
+    }
+
+    /**
+     * @param $credentials
+     * @return array|mixed
+     * @throws DbException
+     * @throws RouteException
+     */
+    static function login($credentials)
+    {
+        if(isset($credentials['email'])){
+            $user = IndexModel::first(self::findEmails(['email'=>$credentials['email']]));
+        } else {
+            $user = IndexModel::first(self::find(['userName' => $credentials['userName']]));
+        }
+        if(empty($user)){
+            throw new RouteException('Unauthorized',401);
+        }
+        // authenticate
+        $password = Db::easy('user_password.password',['user_id'=>'$'.$user['id'], '^delete_date']);
+        if(empty($password)){
+            throw new RouteException('No valid login',422);
+        }
+
+        $verify = password_verify($credentials['password'], $password[0]['password']);
+        if(!$verify){
+            throw new RouteException('Unauthorized', 401);
+        }
+        return $user;
     }
 
 }
