@@ -13,7 +13,7 @@ use Neoan3\Core\RouteException;
  * @package Neoan3\Model
  * @method static create($array)
  * @method static find($array)
- * @method static findEmail($array)
+ * @method static findEmails($array)
  * @method static get($id)
  * @method static update($array)
  */
